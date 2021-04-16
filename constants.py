@@ -7,8 +7,9 @@ DATATYPES = [
     'Date'
 ]
 COLUMN_NAMES = 'Column Names'
-DATATYPE = 'Data Type'
+_DATATYPES = 'DataTypes'
 PREVIEW_DROPDOWN_HEADER = 'Curve Identifier to Display'
 FEATURE_NAME_TO_PLOT = 'Feature Name to Plot'
 SECURITIES_TO_DISPLAY = 'Securities to Display'
 DATE = 'DATE'
+PAGE_SIZE = 20

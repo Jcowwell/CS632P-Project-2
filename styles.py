@@ -1,5 +1,11 @@
 # NOTE: - Styles
 
+app_style={
+    'width': '100%',
+    'textAlign':'center',
+    'itemAlign':'center'
+}
+
 upload_style={
     'width': '100%',
     'height': '60px',
@@ -8,14 +14,16 @@ upload_style={
     'borderStyle': 'dashed',
     'borderRadius': '5px',
     'textAlign': 'center',
-    'alignItem':'center',
+    'alignItem':'center', 
     'margin': '10px'
-},
+}
 
 button_style={
     'display': 'inline-block',
+    'margin':'auto',
     'height': '38px',
     'margin-top': '2rem',
+    'margin-bottom': '2rem',
     'padding': '0 30px',
     'color': '#555',
     'text-align': 'center',
