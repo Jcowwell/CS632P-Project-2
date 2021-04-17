@@ -6,6 +6,10 @@ app_style={
     'itemAlign':'center'
 }
 
+hide_storage_div_style={
+    'display': 'none'
+}
+
 upload_style={
     'width': '100%',
     'height': '60px',

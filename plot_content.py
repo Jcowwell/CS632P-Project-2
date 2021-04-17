@@ -2,12 +2,10 @@
 # REVIEW: - Optimize Imports
 
 # NOTE: - File Processing Libraries
-import io
 import json
-import base64
-import datetime
-from styles import app_style, button_style, upload_style
-from constants import DATATYPES, _DATATYPES, COLUMN_NAMES, PREVIEW_DROPDOWN_HEADER, FEATURE_NAME_TO_PLOT, SECURITIES_TO_DISPLAY, DATE, PAGE_SIZE
+from callback_helper import process_file, process_data
+from styles import app_style, hide_storage_div_style, button_style, upload_style
+from constants import DATATYPES, _DATATYPES, COLUMN_NAMES, PREVIEW_DROPDOWN_HEADER, FEATURE_NAME_TO_PLOT, SECURITIES_TO_DISPLAY, DATE, PAGE_SIZE, ERROR_DIV, STOCK
 # NOTE: - Load Dash libraries
 import dash
 import dash_table
@@ -41,7 +39,7 @@ app.layout = html.Div(
         # Parse Data Button
         html.Button(
             'Parse Data',
-            id='parse_button',
+            id='parse-button',
             n_clicks=0, 
             style=button_style
         ), 
@@ -49,22 +47,23 @@ app.layout = html.Div(
         html.Hr(),  # horizontal line
 
         #  Div object for Filter Datatable Components
-        html.Div(id='filter_datatable_container'),
+        html.Div(id='filter-datatable-container'),
 
         # Div object for Preview Datatable Components
-        html.Div(id='preview_datatable_container'),
+        html.Div(id='preview-datatable-container'),
 
         # Div object for Graph Plot Components
-        html.Div(id='graph_plot_container'),
+        html.Div(id='graph-plot-container'),
 
         # Hidden div that stores the intermediate value (in this case DataFrames)
-        html.Div(id='intermediate-value', style={'display': 'none'}),
+        html.Div(id='intermediate-value', style=hide_storage_div_style),
 
-        # Hidden div that stores the intermediate value (in this case DataFrames)
-        html.Div(id='permitted-columns', style={'display': 'none'})
+        # Hidden div that stores a JSON representation of a lists of Permtted Columns according to User input
+        html.Div(id='permitted-columns', style=hide_storage_div_style),
+
+        # Hidden div that stores a JSON representation of a lists of Permtted Columns according to User input
+        html.Div(id='stock-values', style=hide_storage_div_style)
     ], 
-
-
     style=app_style
 )
 # !SECTION
@@ -78,10 +77,10 @@ appropriate datatype for an input file's columns and ignore selected columns.
 # NOTE: - Function for Filter Datatable and Related Components
 def filter_table(dataframe):
     header = [{COLUMN_NAMES:column, _DATATYPES:'String'} for column in dataframe.columns]
-    data = dataframe.to_dict('records')
+    # data = dataframe.to_dict('records')
     return html.Div([
         dash_table.DataTable(
-            id='filter_table',
+            id='filter-table',
             columns=[
                 {"name": COLUMN_NAMES, "id": COLUMN_NAMES, 'editable':False},
                 {"name": _DATATYPES, "id": _DATATYPES,  'presentation': 'dropdown'},
@@ -105,7 +104,7 @@ def filter_table(dataframe):
 
         html.Hr(),  # horizontal line
 
-        html.Button('Submit', id='filter_button', n_clicks=0, 
+        html.Button('Submit', id='filter-button', n_clicks=0, 
             style=button_style,
         ), 
 
@@ -121,25 +120,25 @@ the filter table and forementioned dropdown component.
 '''
 # NOTE: - Function for Preview Datatable and Related Components
 # TODO
-def preview_table(dataframe):
+def preview_table(dataframe, dropdown_options):
+    
     return html.Div([
         # Header
         html.H1(PREVIEW_DROPDOWN_HEADER),
 
-        # TODO - Insert logic to get Unique 'Stock' in a lists for Curve Identifier Dropdown here
-
         # Curve Identifier to Display Dropdown
-        # TODO - Add Option Logic
-        # dcc.Dropdown(
-        #     id='curve-identifier',
-        #     options=[{}],
-        #     value='',
-        # ),
+        dcc.Dropdown(
+            id='curve-identifier-dropdown',
+            options=[{'label': option, 'value': option} for option in dropdown_options],
+            value=['AAPL'],
+            placeholder="Select a Stock to Display",
+            multi=True,
+            searchable=False,
+        ),
 
         # Preview Table
-        # FIXME 
         dash_table.DataTable(
-            id='preview_table',
+            id='preview-table',
             data=dataframe.to_dict('records'),
             columns=[{'name': i, 'id': i,} for i in dataframe.columns],
             style_cell = {'textAlign': 'left'},
@@ -177,54 +176,26 @@ the Preview Datatable Component.
 # NOTE: - Function for Graph Plot and Related Components
 # TODO
 def graph(data):
-    return
         # TODO - Insert Feature Name to Plot here
+        dcc.Dropdown(
+            id='feature-dropdown',
+            options=[{'label': option, 'value': option} for option in []],
+            value=['AAPL'],
+            placeholder="Select a Feature to Plot",
+        ),
         # TODO - Insert Securities to Display here
+        dcc.Dropdown(
+            id='securities-dropdown',
+            options=[{'label': option, 'value': option} for option in []],
+            value=['AAPL'],
+            placeholder="Select a Stock to Display",
+            multi=True,
+            searchable=False,
+        ),
         # TODO - Insert Graph Plot Here
-# !SECTION
-
-# SECTION: - Callback Function Helpers
-
-''' 
-NOTE: - Adopted from: https://dash.plotly.com/dash-core-components/upload
-Processes CSV and XLS Content Data
-'''
-def process_file(contents,filename):
-    content_type, content_string = contents.split(',')
-
-    decoded_content = base64.b64decode(content_string)
-    try:
-        if 'csv' in filename:
-            # Assume that the user uploaded a CSV file
-            return pd.read_csv(
-                io.StringIO(decoded_content.decode('utf-8')))
-        elif 'xls' in filename:
-            # Assume that the user uploaded an excel file
-            return pd.read_excel(io.BytesIO(decoded_content))
-    except Exception as e:
-        print(e)
-    return None
-''' 
-NOTE: -
-Returns a Dataframe Object from json data
-'''
-def json_to_dataframe(dataframe_json):
-    return pd.read_json(dataframe_json, orient='split')
-''' 
-NOTE: -
-Process Non-Ignored Data and return a Div Object consiting of a Datatable.
-'''
-def process_data(permitted_data, dataframe_json):
-    if not permitted_data:
-        return None
-    dataframe = pd.read_json(dataframe_json, orient='split')
-    columns = [column['Column Names'] for column in permitted_data] 
-    _dataypes = [__datatypes['DataTypes'] for __datatypes in permitted_data]
-
-    # FIXME: - Convert Column Data to DataType based on Index. Perhaps use a Function. 
-
-    return dataframe[columns]
-    
+        dcc.Graph(
+            id='graph'
+        )
 # !SECTION
 
 # SECTION: - Callback Functions
@@ -245,9 +216,10 @@ def display_contents_received(file_content, filename):
     return children
 
 # NOTE: - Callback to Parse Data, Show Filter Datatable and Store Parse Data Contents to a Itermediate Div
-@app.callback(Output('filter_datatable_container', 'children'),
+@app.callback(Output('filter-datatable-container', 'children'),
               Output('intermediate-value','children'),
-              Input('parse_button','n_clicks'),
+              Output('stock-values','children'),
+              Input('parse-button','n_clicks'),
               State('upload', 'contents'),
               State('upload', 'filename'),
               State('upload', 'last_modified')
@@ -256,52 +228,76 @@ def display_filter_table(n_clicks, file_content, filename, file_date):
     if not n_clicks:
         raise PreventUpdate
     if file_content is not None:
-        df = process_file(file_content,filename)
-        if df is None:
-            return html.Div([
-            'There was an error processing this file.'
-            ]), html.Div()
-        df_json = df.to_json(date_format='iso', orient='split')
-        return filter_table(df), df_json 
+        dataframe = process_file(file_content,filename)
+        if dataframe is None:
+            return ERROR_DIV
+        dataframe_json = dataframe.to_json(date_format='iso', orient='split')
+        stocks_json = json.dumps(dataframe['Stock'].unique().tolist())
+        return filter_table(dataframe), dataframe_json, stocks_json
         
 # TODO
 # NOTE: - Callback to show Preview Data Table 
-@app.callback(Output('preview_datatable_container', 'children'),
+@app.callback(Output('preview-datatable-container', 'children'),
               Output('permitted-columns','children'),
-              Input('filter_button','n_clicks'),
+              Input('filter-button','n_clicks'),
               State('intermediate-value','children'),
-              State('filter_table','data'),
-              State('filter_table','derived_virtual_selected_rows'),
-              State('filter_table','dropdown.value'),
+              State('stock-values','children'),
+              State('filter-table','data'),
+              State('filter-table','derived_virtual_selected_rows'),
+              State('filter-table','dropdown.value'),
               )
-def display_preview_table(n_clicks , dataframe_json, filter_table_data, selected_rows, dropdown):
+def display_preview_table(n_clicks , dataframe_json, stocks_json, filter_table_data, selected_rows, dropdown):
     if not n_clicks:
         raise PreventUpdate
 
-    print("Filtered Data: %s" % filter_table_data)
-    print("Selected Rows: %s" % selected_rows)
-    print("Dropdown: %s" % dropdown)
+    # print("Filtered Data: %s" % filter_table_data)
+    # print("Selected Rows: %s" % selected_rows)
+    # print("Dropdown: %s" % dropdown)
 
     permitted_data = [row for index, row in enumerate(filter_table_data) if index not in selected_rows]
 
     dataframe = process_data(permitted_data=permitted_data, dataframe_json=dataframe_json)
 
-    return preview_table(dataframe=dataframe), json.dumps(permitted_data)
+    if dataframe is None: 
+        return ERROR_DIV
+    
+    stocks = json.loads(stocks_json)
+    
+    # Invoke Dropview & Graph Components Display Function
 
+    dataframe = dataframe.iloc[0 * PAGE_SIZE: (1) * PAGE_SIZE]
+
+    return preview_table(dataframe=dataframe, dropdown_options=stocks), json.dumps(permitted_data)
+
+# NOTE: - Callback to Update Preview Table Page 
 @app.callback(
-    Output('preview_table', 'data'),
-    Input('preview_table', "page_current"),
-    Input('preview_table', "page_size"),
+    Output('preview-table', 'data'),
+    Input('preview-table', "page_current"),
+    Input('preview-table', "page_size"),
+    Input('curve-identifier-dropdown', "value"),
     State('intermediate-value', "children"),
     State('permitted-columns','children'),
     )
-def update_preview_table(page_current, page_size, dataframe_json, permitted_data_json):
+def update_preview_table(page_current, page_size, curve_identifier, dataframe_json, permitted_data_json):
     permitted_data = json.loads(permitted_data_json)
     dataframe = process_data(permitted_data=permitted_data, dataframe_json=dataframe_json)
+    if curve_identifier != []:
+        is_curve_identifier = dataframe[STOCK].isin(curve_identifier)
+        dataframe = dataframe[is_curve_identifier]
     return dataframe[page_current*page_size:(page_current+ 1)*page_size].to_dict('records')
 
 # TODO
-def display_graph():
+# NOTE: - Callback to Display Graph 
+@app.callback(
+    Output('graph', 'figure'),
+    Input('preview-table', "data"),
+    # State('feature-dropdown', "value"),
+    # State('securities-dropdown', "value"),
+    )
+def display_graph(dataframe):
+    # Get Volume and Data Columns based on Value Types for feature-dropdown component
+    # Use stock-values for securities-dropdown dropdown
+    # Invoke Graph Figure Function that returns a Graph Figure. 
     return
 # !SECTION
 
