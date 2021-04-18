@@ -1,5 +1,7 @@
 import io
+import numpy as np
 import pandas as pd
+import plotly.express as px
 import base64
 
 # SECTION: - Callback Function Helpers
@@ -26,18 +28,43 @@ def process_file(contents,filename):
 
 ''' 
 NOTE: -
+Returns a Dataframe from a JSON Object
+'''
+def unload_dataframe(dataframe_json):
+    return pd.read_json(dataframe_json, orient='split')
+
+''' 
+NOTE: -
 Process Non-Ignored Data and return a Div Object consiting of a Datatable.
 '''
-def process_data(permitted_data, dataframe_json):
-    dataframe = pd.read_json(dataframe_json, orient='split')
+def filter_dataframe(permitted_data, dataframe):
     columns = [column['Column Names'] for column in permitted_data] 
     _dataypes = [__datatypes['DataTypes'] for __datatypes in permitted_data]
 
     # FIXME: - Convert Column Data to DataType based on Index. Perhaps use a Function. 
     return dataframe[columns]
 
+''' 
+NOTE: -
+Returns a lists of Column Names that consists of numerical values
+'''
 def get_numerical_columns(dataframe):
-    # TODO: Filter Dataframe by getting only Columns that have Int and Float values. 
-    return
+    # TODO: Filter Dataframe by getting only Columns that have Int and Float values.
+    if dataframe is not None:
+        return dataframe.select_dtypes(include=np.number).columns.tolist()
+    return []
+
+''' 
+NOTE: -
+Returns a lists of Unique Values from desired DataFrame Column.
+'''
+def get_unique_values(dataframe, column_name):
+    if dataframe is not None or column_name is not None:
+        try:
+            return dataframe[column_name].unique().tolist()
+        except Exception as e:
+            print(e)
+    return []
+
 
 
