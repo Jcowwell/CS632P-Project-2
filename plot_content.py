@@ -4,7 +4,7 @@
 # NOTE: - File Processing Libraries
 import json
 from callback_helper import process_file, process_data
-from styles import app_style, hide_storage_div_style, button_style, upload_style
+from styles import app_style, hide_div, table_style, center_div_contents, button_style, upload_style
 from constants import DATATYPES, _DATATYPES, COLUMN_NAMES, PREVIEW_DROPDOWN_HEADER, FEATURE_NAME_TO_PLOT, SECURITIES_TO_DISPLAY, DATE, PAGE_SIZE, ERROR_DIV, STOCK
 # NOTE: - Load Dash libraries
 import dash
@@ -17,7 +17,7 @@ from dash.dependencies import Input, Output, State
 
 # !SECTION
 
-app = dash.Dash('Hello Dash!')
+app = dash.Dash('Hello Dash!', suppress_callback_exceptions=True)
 
 # SECTION: - App Layout
 # NOTE: - App CSS
@@ -56,13 +56,16 @@ app.layout = html.Div(
         html.Div(id='graph-plot-container'),
 
         # Hidden div that stores the intermediate value (in this case DataFrames)
-        html.Div(id='intermediate-value', style=hide_storage_div_style),
+        html.Div(id='intermediate-value', style=hide_div),
 
         # Hidden div that stores a JSON representation of a lists of Permtted Columns according to User input
-        html.Div(id='permitted-columns', style=hide_storage_div_style),
+        html.Div(id='permitted-columns', style=hide_div),
 
         # Hidden div that stores a JSON representation of a lists of Permtted Columns according to User input
-        html.Div(id='stock-values', style=hide_storage_div_style)
+        html.Div(id='stock-values', style=hide_div),
+
+        # Hidden div that stores a JSON representation of a lists of Permtted Columns according to User input
+        html.Div(id='feature-values', style=hide_div)
     ], 
     style=app_style
 )
@@ -99,7 +102,8 @@ def filter_table(dataframe):
             page_current= 0,
             page_size= 10,
             editable=True,
-            style_cell = {'textAlign': 'left'},    
+            style_table=table_style,
+            style_cell = {'textAlign': 'left'},   
         ),
 
         html.Hr(),  # horizontal line
@@ -110,7 +114,7 @@ def filter_table(dataframe):
 
         html.Hr(),  # horizontal line
     ],
-        style=app_style
+        style=center_div_contents
     )
 
 ''' 
@@ -124,7 +128,7 @@ def preview_table(dataframe, dropdown_options):
     
     return html.Div([
         # Header
-        html.H1(PREVIEW_DROPDOWN_HEADER),
+        html.H2(PREVIEW_DROPDOWN_HEADER),
 
         # Curve Identifier to Display Dropdown
         dcc.Dropdown(
@@ -155,6 +159,7 @@ def preview_table(dataframe, dropdown_options):
             page_current=0,
             page_size=PAGE_SIZE,
             page_action='custom',
+            style_table=table_style,
             style_as_list_view=True,
         ),
 
@@ -166,7 +171,9 @@ def preview_table(dataframe, dropdown_options):
         #     'whiteSpace': 'pre-wrap',
         #     'wordBreak': 'break-all'
         # })
-    ])
+    ],
+        style=center_div_contents,
+    )
 
 ''' 
 NOTE: - Returns a Div object that consists of a Single-Value Dropdown, 
@@ -180,7 +187,9 @@ def graph(data):
         dcc.Dropdown(
             id='feature-dropdown',
             options=[{'label': option, 'value': option} for option in []],
+            # TODO: Convert to Constant String
             value=['AAPL'],
+            # TODO: COnvert to Constant String
             placeholder="Select a Feature to Plot",
         ),
         # TODO - Insert Securities to Display here
@@ -188,22 +197,23 @@ def graph(data):
             id='securities-dropdown',
             options=[{'label': option, 'value': option} for option in []],
             value=['AAPL'],
+            # TODO: Convert to Constant String
             placeholder="Select a Stock to Display",
             multi=True,
             searchable=False,
         ),
         # TODO - Insert Graph Plot Here
-        dcc.Graph(
-            id='graph'
-        )
+        # dcc.Graph(
+        #     id='graph'
+        # )
 # !SECTION
 
 # SECTION: - Callback Functions
 
 # NOTE: - Callback to Show File was Uploaded
 @app.callback(Output('upload', 'children'),
-              Input('upload', 'contents'),
-              State('upload', 'filename'),
+              [Input('upload', 'contents')],
+              [State('upload', 'filename')]
               )  
 def display_contents_received(file_content, filename):
     if file_content is None:
@@ -216,13 +226,14 @@ def display_contents_received(file_content, filename):
     return children
 
 # NOTE: - Callback to Parse Data, Show Filter Datatable and Store Parse Data Contents to a Itermediate Div
-@app.callback(Output('filter-datatable-container', 'children'),
+@app.callback([Output('filter-datatable-container', 'children'),
               Output('intermediate-value','children'),
               Output('stock-values','children'),
-              Input('parse-button','n_clicks'),
-              State('upload', 'contents'),
+              Output('feature-values', "value")],
+              [Input('parse-button','n_clicks')],
+              [State('upload', 'contents'),
               State('upload', 'filename'),
-              State('upload', 'last_modified')
+              State('upload', 'last_modified')]
               )
 def display_filter_table(n_clicks, file_content, filename, file_date):
     if not n_clicks:
@@ -232,27 +243,24 @@ def display_filter_table(n_clicks, file_content, filename, file_date):
         if dataframe is None:
             return ERROR_DIV
         dataframe_json = dataframe.to_json(date_format='iso', orient='split')
+        # TODO: - Convert to more abstract function
         stocks_json = json.dumps(dataframe['Stock'].unique().tolist())
+        # TODO: - features_json = get_numerical_columns()
         return filter_table(dataframe), dataframe_json, stocks_json
         
 # TODO
 # NOTE: - Callback to show Preview Data Table 
-@app.callback(Output('preview-datatable-container', 'children'),
-              Output('permitted-columns','children'),
-              Input('filter-button','n_clicks'),
-              State('intermediate-value','children'),
+@app.callback([Output('permitted-columns','children'),
+              Output('preview-datatable-container', 'children')],
+              [Input('filter-button','n_clicks')],
+              [State('intermediate-value','children'),
               State('stock-values','children'),
               State('filter-table','data'),
-              State('filter-table','derived_virtual_selected_rows'),
-              State('filter-table','dropdown.value'),
+              State('filter-table','derived_virtual_selected_rows')]
               )
-def display_preview_table(n_clicks , dataframe_json, stocks_json, filter_table_data, selected_rows, dropdown):
+def display_preview_table(n_clicks , dataframe_json, stocks_json, filter_table_data, selected_rows, features, selected):
     if not n_clicks:
         raise PreventUpdate
-
-    # print("Filtered Data: %s" % filter_table_data)
-    # print("Selected Rows: %s" % selected_rows)
-    # print("Dropdown: %s" % dropdown)
 
     permitted_data = [row for index, row in enumerate(filter_table_data) if index not in selected_rows]
 
@@ -267,19 +275,22 @@ def display_preview_table(n_clicks , dataframe_json, stocks_json, filter_table_d
 
     dataframe = dataframe.iloc[0 * PAGE_SIZE: (1) * PAGE_SIZE]
 
-    return preview_table(dataframe=dataframe, dropdown_options=stocks), json.dumps(permitted_data)
+    return  json.dumps(permitted_data), preview_table(dataframe=dataframe, dropdown_options=stocks)
 
 # NOTE: - Callback to Update Preview Table Page 
+# FIXME: - WINDOWS 10 MICROSOFT EDGE ISSUE: State('permitted-columns','children')] returns none?
 @app.callback(
     Output('preview-table', 'data'),
-    Input('preview-table', "page_current"),
+    [Input('preview-table', "page_current"),
     Input('preview-table', "page_size"),
-    Input('curve-identifier-dropdown', "value"),
-    State('intermediate-value', "children"),
-    State('permitted-columns','children'),
+    Input('curve-identifier-dropdown', "value")],
+    [State('intermediate-value', "children"),
+    State('permitted-columns','children')],
     )
 def update_preview_table(page_current, page_size, curve_identifier, dataframe_json, permitted_data_json):
-    permitted_data = json.loads(permitted_data_json)
+    permitted_data = []
+    if permitted_data_json is not None:
+        permitted_data = json.loads(permitted_data_json)
     dataframe = process_data(permitted_data=permitted_data, dataframe_json=dataframe_json)
     if curve_identifier != []:
         is_curve_identifier = dataframe[STOCK].isin(curve_identifier)
@@ -290,14 +301,13 @@ def update_preview_table(page_current, page_size, curve_identifier, dataframe_js
 # NOTE: - Callback to Display Graph 
 @app.callback(
     Output('graph', 'figure'),
-    Input('preview-table', "data"),
-    # State('feature-dropdown', "value"),
-    # State('securities-dropdown', "value"),
+    [Input('preview-table', "data")],
     )
 def display_graph(dataframe):
     # Get Volume and Data Columns based on Value Types for feature-dropdown component
     # Use stock-values for securities-dropdown dropdown
     # Invoke Graph Figure Function that returns a Graph Figure. 
+    print("Here")
     return
 # !SECTION
 

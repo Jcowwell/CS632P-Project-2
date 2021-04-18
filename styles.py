@@ -6,8 +6,19 @@ app_style={
     'itemAlign':'center'
 }
 
-hide_storage_div_style={
-    'display': 'none'
+center_div_contents={
+    'width':'100%',
+    'margin':'auto',
+    'textAlign':'center',
+    'itemAlign':'center',
+}
+
+hide_div={
+    'display':'none'
+}
+
+table_style={
+    'margin':'auto',
 }
 
 upload_style={

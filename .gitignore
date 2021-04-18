@@ -1,1 +1,5 @@
 .DS_Store
+__pycache__/callback_helper.cpython-37.pyc
+__pycache__/constants.cpython-37.pyc
+__pycache__/styles.cpython-37.pyc
+.vscode/settings.json
