@@ -17,6 +17,7 @@ PAGE_SIZE = 15
 DEFAULT_FEATURE = 'Adj Close'
 DEFAULT_STOCK = 'AAPL'
 # NOTE: - TITLE STRING CONSTANTS
+FILTER_TABLE_TITLE = 'Filter Table'
 PREVIEW_DROPDOWN_HEADER = 'Curve Identifier to Display'
 FEATURE_NAME_TO_PLOT = 'Feature Name to Plot'
 SECURITIES_TO_DISPLAY = 'Securities to Display'
@@ -25,7 +26,8 @@ STOCK_DROPDOWN_PLACEHOLDER = "Select a Stock to Display"
 #NOTE: -  DASH HTML CONSTANTS
 ERROR_DIV = html.Div([
             'There was an error processing this file.'
-            ]), html.Div()
+            ])
+EMPTY_DIV = html.Div()
 # NOTE: - MISC
 COLUMN_NAMES = 'Column Names'
 DATATYPES_ = 'DataTypes'

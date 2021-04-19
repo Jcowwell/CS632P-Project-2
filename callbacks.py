@@ -10,8 +10,8 @@ from dash.exceptions import PreventUpdate
 from dash.dependencies import Input, Output, State
 # NOTE: - Load Project Libraries
 from components import filter_table, preview_table, graph
-from constants import ADJ_CLOSE, DATE, DEFAULT_FEATURE, DEFAULT_STOCK, PAGE_SIZE, ERROR_DIV, STOCK
-from callback_helper import get_numerical_columns, get_unique_values, process_file, filter_dataframe, unload_dataframe
+from constants import ADJ_CLOSE, DATE, DEFAULT_FEATURE, DEFAULT_STOCK, EMPTY_DIV, ERROR_DIV, STOCK
+from callback_helper import dump_dataframe, filter_dataframe_by_column_value, get_numerical_columns, get_unique_values, paginate, process_file, filter_dataframe_columns, load_dataframe
 
 # SECTION: - Callback Functions
 # NOTE: - Callback to Show File was Uploaded
@@ -20,11 +20,12 @@ from callback_helper import get_numerical_columns, get_unique_values, process_fi
               [State('upload', 'filename')]
               )  
 def display_contents_received(file_content, filename):
-    if file_content is None:
-        children= [html.Div([
-                'Drag and Drop or ',
-                html.A('Select Files')
-            ])]
+    # If File content has not been uploaded show the option to upload.
+    children= [html.Div([
+            'Drag and Drop or ',
+            html.A('Select Files')
+        ])]
+    # If File content has uploaded, Show It!
     if file_content is not None:
         children = [html.Div(['%s Uploaded' % (filename)])]
     return children
@@ -40,16 +41,24 @@ def display_contents_received(file_content, filename):
               State('upload', 'last_modified')]
               )
 def display_filter_table(n_clicks, file_content, filename, file_date):
-    if not n_clicks:
+    # Let's not do anyhting unless the Button is clicked or no file_content to upload.
+    if not n_clicks or file_content is None:
         raise PreventUpdate
+
     if file_content is not None:
+        # Get Dataframe from Upload
         dataframe = process_file(file_content,filename)
         if dataframe is None:
-            return ERROR_DIV
-        dataframe_json = dataframe.to_json(date_format='iso', orient='split')
-        # TODO: - Convert to more abstract function
+            # Show soemthing went wrong if Dataframe wasn't made
+            return ERROR_DIV, EMPTY_DIV, EMPTY_DIV, EMPTY_DIV
+        
+        # Convert dataframe to JSON Object to access in other Callbacks
+        dataframe_json = dump_dataframe(dataframe=dataframe)
+        # Get JSON lists of unique Stock values from Dataframe 
         stocks_json = json.dumps(get_unique_values(dataframe=dataframe, column_name=STOCK))
+        # Get JSON lists of numerical columns from Dataframe
         features_json = json.dumps(get_numerical_columns(dataframe=dataframe))
+
         return filter_table(dataframe), dataframe_json, stocks_json, features_json
         
 # TODO
@@ -64,29 +73,45 @@ def display_filter_table(n_clicks, file_content, filename, file_date):
               State('filter-table','data'),
               State('filter-table','derived_virtual_selected_rows')]
               )
-def display_preview_table(n_clicks , dataframe_json, stocks_json, features_json, filter_table_data, selected_rows):
+def display_data(n_clicks , dataframe_json, stocks_json, features_json, filter_table_data, selected_rows):
+    # Let's not Update unless the Button is clicked.
     if not n_clicks:
         raise PreventUpdate
 
-    permitted_data = [row for index, row in enumerate(filter_table_data) if index not in selected_rows]
+    # Lists of Wanted Columns.
+    permitted_columns = [row for index, row in enumerate(filter_table_data) if index not in selected_rows]
+    # Globally Stored Dataframe
+    dataframe = load_dataframe(dataframe_json=dataframe_json)
+    # Filtered Dataframe based on Allowed Columns
+    filtered_dataframe = filter_dataframe_columns(dataframe=dataframe, permitted_columns=permitted_columns)
 
-    dataframe = unload_dataframe(dataframe_json=dataframe_json)
-
-    filtered_dataframe = filter_dataframe(permitted_data=permitted_data, dataframe=dataframe)
-
-    if filtered_dataframe is None: 
-        return ERROR_DIV
+    # If the filtered dataframe is empty...Houson we have a problem
+    if filtered_dataframe is None or filtered_dataframe.empty: 
+        return EMPTY_DIV, EMPTY_DIV, ERROR_DIV
     
+    # Lists of Stocks from JSON Object
     stocks = json.loads(stocks_json)
 
+    # Lists of (numerical) columns from JSON Object
     features = json.loads(features_json)
 
+    # Title for graph
     title = "%s vs %s" % (DEFAULT_FEATURE, DEFAULT_STOCK)
+    # Figure for Graph Plot
     fig = px.line(dataframe, x=DATE, y=ADJ_CLOSE, color=STOCK, template=pio.templates['seaborn'], title=title)
 
-    filtered_dataframe = filtered_dataframe.iloc[0 * PAGE_SIZE: (1) * PAGE_SIZE]
+    # Paginate Dataframe
+    filtered_dataframe = paginate(dataframe=filtered_dataframe, page_current=0, page_size=0)
 
-    return json.dumps(permitted_data), preview_table(dataframe=filtered_dataframe, dropdown_options=stocks), graph(fig=fig, feature_dropdown_option=features, securities_dropdown_option=stocks)
+    # Dump Lists of Wanted Columns into a JSON Object
+    permitted_columns_json = json.dumps(permitted_columns)
+    # Preview Table
+    preview_table_ = preview_table(dataframe=filtered_dataframe, dropdown_options=stocks)
+    # Graph
+    graph_ = graph(fig=fig, feature_dropdown_option=features, securities_dropdown_option=stocks)
+    
+    #NOTE: - permitted_columns_json JSON Object must be returned before the preivew table or the update callback for the preview_table will be called and fuck shit up.  
+    return permitted_columns_json, preview_table_, graph_
 
 # NOTE: - Callback to Update Preview Table Page 
 @app.callback(
@@ -97,18 +122,47 @@ def display_preview_table(n_clicks , dataframe_json, stocks_json, features_json,
     [State('dataframe-value', "children"),
     State('permitted-columns','children')],
     )
-def update_preview_table(page_current, page_size, curve_identifier, dataframe_json, permitted_data_json):
-    permitted_data = []
-    if permitted_data_json is not None:
-        permitted_data = json.loads(permitted_data_json)
-    dataframe = unload_dataframe(dataframe_json=dataframe_json)
-    filtered_dataframe = filter_dataframe(permitted_data=permitted_data, dataframe=dataframe)
+def update_preview_table(page_current, page_size, curve_identifier, dataframe_json, permitted_columns_json):
+
+    if permitted_columns_json is not None:
+        # Dump Lists of Wanted Columns
+        permitted_columns = json.loads(permitted_columns_json)
+    # Dump Dataframe from JSON Object 
+    dataframe = load_dataframe(dataframe_json=dataframe_json)
+    # Filter Dataframe based on lists of wanted columns
+    filtered_dataframe = filter_dataframe_columns(dataframe=dataframe, permitted_columns=permitted_columns)
     if curve_identifier != []:
-        is_curve_identifier = filtered_dataframe[STOCK].isin(curve_identifier)
-        filtered_dataframe = filtered_dataframe[is_curve_identifier]
-    return filtered_dataframe[page_current*page_size:(page_current+ 1)*page_size].to_dict('records')
+        # Filtered Dataframe based on inputed stock values
+        filtered_dataframe = filter_dataframe_by_column_value(dataframe=filtered_dataframe, column=STOCK, value=curve_identifier)
+    # Paginate Filtered Dataframe
+    filtered_dataframe = paginate(dataframe=filtered_dataframe, page_current=page_current, page_size=page_size)
+
+    return filtered_dataframe.to_dict('records')
 
 # TODO
 # NOTE: - Callback to Update Graph based on Dropdown Values
+@app.callback(
+    Output('graph', 'figure'),
+    [Input('feature', "value"),
+    Input('securities', "value")],
+    [State('dataframe-value', "children")],
+    )
+def update_graph(feature, securities, dataframe_json):
+    if feature is None or securities is None or securities == []:
+        # Houson... We got a problem
+        return {}
+
+    # Globally Stored Dataframe
+    dataframe = load_dataframe(dataframe_json=dataframe_json)
+
+    # Filter Stocks from securities Dropdown
+    filtered_dataframe = filter_dataframe_by_column_value(dataframe=dataframe, column=STOCK, value=securities)
+
+    # Title for Graph
+    title = "%s vs %s" % (DEFAULT_FEATURE, DEFAULT_STOCK)
+    # Figure for Graph
+    fig = px.line(filtered_dataframe, x=DATE, y=feature, color=STOCK, template=pio.templates['seaborn'], title=title)
+
+    return fig
 
 # !SECTION

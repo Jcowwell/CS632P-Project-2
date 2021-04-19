@@ -1,3 +1,4 @@
+from constants import PAGE_SIZE
 import io
 import base64
 import numpy as np
@@ -9,7 +10,7 @@ import pandas as pd
 NOTE: - Adopted from: https://dash.plotly.com/dash-core-components/upload
 Processes CSV and XLS Content Data
 '''
-def process_file(contents,filename):
+def process_file(contents, filename):
     content_type, content_string = contents.split(',')
 
     decoded_content = base64.b64decode(content_string)
@@ -27,21 +28,41 @@ def process_file(contents,filename):
 
 ''' 
 NOTE: -
+Returns a JSON Object from a Dataframe
+'''
+def dump_dataframe(dataframe):
+    return dataframe.to_json(date_format='iso', orient='split')
+
+''' 
+NOTE: -
 Returns a Dataframe from a JSON Object
 '''
-def unload_dataframe(dataframe_json):
+def load_dataframe(dataframe_json):
     return pd.read_json(dataframe_json, orient='split')
 
 ''' 
 NOTE: -
-Process Non-Ignored Data and return a Div Object consiting of a Datatable.
+Returns a Dataframe Object filtered by permitted a column and value.
 '''
-def filter_dataframe(permitted_data, dataframe):
-    columns = [column['Column Names'] for column in permitted_data] 
-    _dataypes = [__datatypes['DataTypes'] for __datatypes in permitted_data]
+def filter_dataframe_by_column_value(dataframe, column, value):
+    if column not in dataframe.columns:
+        return dataframe
+    # Create Series Object to filter for wanted value in column
+    is_value = dataframe[column].isin(value)
+    # Use Series to filter Dataframe
+    return dataframe[is_value]
+
+''' 
+NOTE: -
+Returns a Dataframe Object with permitted column(s).
+'''
+def filter_dataframe_columns(dataframe, permitted_columns):
+    columns = [column['Column Names'] for column in permitted_columns] 
+    _dataypes = [__datatypes['DataTypes'] for __datatypes in permitted_columns]
 
     # FIXME: - Convert Column Data to DataType based on Index. Perhaps use a Function. 
     return dataframe[columns]
+
 
 ''' 
 NOTE: -
@@ -65,5 +86,9 @@ def get_unique_values(dataframe, column_name):
             print(e)
     return []
 
-
-
+''' 
+NOTE: -
+Returns a Paginate Dataframe
+'''
+def paginate(dataframe, page_current=0, page_size=0):
+    return dataframe.iloc[page_current*page_size:(page_current+ 1)*page_size]

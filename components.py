@@ -5,8 +5,8 @@ import dash_table
 import dash_core_components as dcc
 import dash_html_components as html
 # NOTE: - Load Project Libraries
-from styles import table_style, center_div_contents, button_style
-from constants import DATATYPES, DEFAULT_FEATURE, DEFAULT_STOCK, FEATURE_DROPDOWN_PLACEHOLDER, STOCK_DROPDOWN_PLACEHOLDER, DATATYPES_, COLUMN_NAMES, PREVIEW_DROPDOWN_HEADER, FEATURE_NAME_TO_PLOT, SECURITIES_TO_DISPLAY, PAGE_SIZE
+from styles import table_style, center_div_contents, filter_div_contents, button_style, dropdown_style
+from constants import DATATYPES, DEFAULT_FEATURE, DEFAULT_STOCK, FEATURE_DROPDOWN_PLACEHOLDER, FILTER_TABLE_TITLE, STOCK_DROPDOWN_PLACEHOLDER, DATATYPES_, COLUMN_NAMES, PREVIEW_DROPDOWN_HEADER, FEATURE_NAME_TO_PLOT, SECURITIES_TO_DISPLAY, PAGE_SIZE
 # !SECTION
 
 # SECTION: - Component Functions 
@@ -17,8 +17,11 @@ appropriate datatype for an input file's columns and ignore selected columns.
 # NOTE: - Function for Filter Datatable and Related Components
 def filter_table(dataframe):
     header = [{COLUMN_NAMES:column, DATATYPES_:'String'} for column in dataframe.columns]
-    
+
     return html.Div([
+
+        html.H3(FILTER_TABLE_TITLE),
+
         dash_table.DataTable(
             id='filter-table',
             columns=[
@@ -43,15 +46,13 @@ def filter_table(dataframe):
             style_cell = {'textAlign': 'left'},   
         ),
 
-        html.Hr(),  # horizontal line
-
         html.Button('Submit', id='filter-button', n_clicks=0, 
             style=button_style,
         ), 
 
         html.Hr(),  # horizontal line
     ],
-        style=center_div_contents
+        style=filter_div_contents
     )
 
 ''' 
@@ -65,16 +66,18 @@ def preview_table(dataframe, dropdown_options):
     
     return html.Div([
         # Header
-        html.H2(PREVIEW_DROPDOWN_HEADER),
+        html.H3(PREVIEW_DROPDOWN_HEADER),
 
         # Curve Identifier to Display Dropdown
         dcc.Dropdown(
             id='curve-identifier-dropdown',
             options=[{'label': option, 'value': option} for option in dropdown_options],
             value=[DEFAULT_STOCK],
-            placeholder="Select a Stock to Display",
+            placeholder=STOCK_DROPDOWN_PLACEHOLDER,
             multi=True,
             searchable=False,
+            clearable=False,
+            style=dropdown_style,
         ),
 
         # Preview Table
@@ -101,13 +104,6 @@ def preview_table(dataframe, dropdown_options):
         ),
 
         html.Hr(),  # horizontal line
-
-        # # For debugging, display the raw contents provided by the web browser
-        # html.Div('Raw Content'),
-        # html.Pre(contents[0:200] + '...', style={
-        #     'whiteSpace': 'pre-wrap',
-        #     'wordBreak': 'break-all'
-        # })
     ],
         style=center_div_contents,
     )
@@ -121,31 +117,39 @@ the Preview Datatable Component.
 # TODO - Add Styling and Seperators
 def graph(fig, feature_dropdown_option, securities_dropdown_option):
         return html.Div([
-            # TODO - Insert Feature Name to Plot here
+
+            html.H3(FEATURE_NAME_TO_PLOT),
+
             dcc.Dropdown(
-                id='feature-dropdown',
+                id='feature',
                 options=[{'label': option, 'value': option} for option in feature_dropdown_option],
-                # TODO: Convert to Constant String
                 value=DEFAULT_FEATURE,
-                # TODO: COnvert to Constant String
                 placeholder=FEATURE_DROPDOWN_PLACEHOLDER,
+                searchable=False,
+                clearable=False,
+                style=dropdown_style,
             ),
-            # TODO - Insert Securities to Display here
+
+            html.H3(SECURITIES_TO_DISPLAY),
+
             dcc.Dropdown(
-                id='securities-dropdown',
+                id='securities',
                 options=[{'label': option, 'value': option} for option in securities_dropdown_option],
                 value=[DEFAULT_STOCK],
                 # TODO: Convert to Constant String
                 placeholder=STOCK_DROPDOWN_PLACEHOLDER,
                 multi=True,
                 searchable=False,
+                clearable=False,
+                style=dropdown_style,
             ),
-            # TODO - Insert Graph Plot Here
+            
             dcc.Graph(
                 id='graph',
                 figure=fig
             )
-        ]
+        ],
+        style=center_div_contents
         )
 # !SECTION
 

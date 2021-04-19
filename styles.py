@@ -3,12 +3,21 @@
 app_style={'external_url': 'https://codepen.io/chriddyp/pen/bWLwgP.css'}
 
 layout_style={
-    'width': '100%',
+    'width': '50%',
     'textAlign':'center',
-    'itemAlign':'center'
+    'itemAlign':'center',
+    'margin': 'auto'
 }
 
 center_div_contents={
+    'width':'100%',
+    'margin':'auto',
+    'textAlign':'left',
+    'itemAlign':'center',
+}
+
+#NOTE: -  Because Buttons are Weird.
+filter_div_contents={
     'width':'100%',
     'margin':'auto',
     'textAlign':'center',
@@ -21,6 +30,13 @@ hide_div={
 
 table_style={
     'margin':'auto',
+    'margin-top': '2rem',
+
+}
+
+dropdown_style={
+    'margin-top': '1rem',
+    'margin-bottom': '1rem',
 }
 
 upload_style={
@@ -39,21 +55,21 @@ button_style={
     'display': 'inline-block',
     'margin':'auto',
     'height': '38px',
-    'margin-top': '2rem',
-    'margin-bottom': '2rem',
+    'marginTop': '2rem',
+    'marginBottom': '2rem',
     'padding': '0 30px',
     'color': '#555',
-    'text-align': 'center',
-    'font-size': '11px',
-    'font-weight': '600',
-    'line-height': '38px',
-    'letter-spacing': '.1rem',
-    'text-transform': 'uppercase',
-    'text-decoration': 'none',
-    'white-space': 'nowrap',
-    'background-color': 'transparent',
-    'border-radius': '4px',
+    'textAlign': 'center',
+    'fontSize': '11px',
+    'fontWeight': '600',
+    'lineHeight': '38px',
+    'letterSpacing': '.1rem',
+    'textTransform': 'uppercase',
+    'textDecoration': 'none',
+    'whiteSpace': 'nowrap',
+    'backgroundColor': 'transparent',
+    'borderRadius': '4px',
     'border': '1px solid #bbb',
     'cursor': 'pointer',
-    'box-sizing': 'border-box'
+    'boxSizing': 'border-box'
 }
