@@ -1,8 +1,7 @@
 import io
+import base64
 import numpy as np
 import pandas as pd
-import plotly.express as px
-import base64
 
 # SECTION: - Callback Function Helpers
 

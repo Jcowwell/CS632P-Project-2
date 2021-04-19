@@ -1,6 +1,8 @@
 # NOTE: - Styles
 
-app_style={
+app_style={'external_url': 'https://codepen.io/chriddyp/pen/bWLwgP.css'}
+
+layout_style={
     'width': '100%',
     'textAlign':'center',
     'itemAlign':'center'
