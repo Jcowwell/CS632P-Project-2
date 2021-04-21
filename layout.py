@@ -44,10 +44,10 @@ layout = html.Div(
         # Hidden div that stores a JSON representation of a lists of Permtted Columns according to User input
         html.Div(id='permitted-columns', style=hide_div),
 
-        # Hidden div that stores a JSON representation of a lists of Permtted Columns according to User input
+        # Hidden div that stores a JSON representation of a lists of Unique Stock Values according to User input
         html.Div(id='stock-values', style=hide_div),
 
-        # Hidden div that stores a JSON representation of a lists of Permtted Columns according to User input
+        # Hidden div that stores a JSON representation of a lists of numerical datatype Columns according to User input
         html.Div(id='feature-values', style=hide_div)
     ], 
     style=layout_style
