@@ -58,7 +58,7 @@ def display_filter_table(n_clicks, file_content, filename, file_date):
         stocks_json = json.dumps(get_unique_values(dataframe=dataframe, column_name=STOCK))
         # Get JSON lists of numerical columns from Dataframe
         features_json = json.dumps(get_numerical_columns(dataframe=dataframe))
-
+        print(filter_table(dataframe))
         return filter_table(dataframe), dataframe_json, stocks_json, features_json
         
 # TODO

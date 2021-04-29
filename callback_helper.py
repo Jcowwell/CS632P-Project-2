@@ -1,4 +1,4 @@
-from constants import PAGE_SIZE
+from constants import DATATYPES_CONVERSION_OPTIONS, PAGE_SIZE
 import io
 import base64
 import numpy as np
@@ -63,6 +63,15 @@ def filter_dataframe_columns(dataframe, permitted_columns):
     # FIXME: - Convert Column Data to DataType based on Index. Perhaps use a Function. 
     return dataframe[columns]
 
+''' 
+NOTE: -
+Returns a Dict of Column Name Dataypes
+'''
+def get_dataframe_column_datatype(dataframe):
+    if dataframe is not None and 'Date' in dataframe.columns:
+            dataframe['Date'] =  dataframe['Date'].astype('datetime64[ns]')
+            return {column: DATATYPES_CONVERSION_OPTIONS[datatype.name] for column, datatype in dataframe.dtypes.to_dict().items()}
+    return {}
 
 ''' 
 NOTE: -
@@ -73,6 +82,16 @@ def get_numerical_columns(dataframe):
     if dataframe is not None:
         return dataframe.select_dtypes(include=np.number).columns.tolist()
     return []
+
+''' 
+NOTE: -
+Returns a Dataframe with proper Date Dataype for future Column Datatype Options
+'''
+def datify_dataframe(dataframe):
+    # TODO: Filter Dataframe by getting only Columns that have Int and Float values.
+    if dataframe is not None and 'Date' in dataframe.columns:
+            dataframe['Date'] =  dataframe['Date'].astype('datetime64[ns]')
+    return dataframe
 
 ''' 
 NOTE: -

@@ -1,5 +1,6 @@
 # NOTE - Constants
 import dash_html_components as html
+import numpy as np
 
 DATATYPES = [
     'String',
@@ -8,10 +9,26 @@ DATATYPES = [
     'Boolean',
     'Date'
 ]
+
+DATATYPE_MAP = {
+    'String': "str",
+    'Integer': "int",
+    'Float': "float",
+    'Date': "np.datetime64",
+}
+DATATYPES_CONVERSION_OPTIONS = {
+    'object':['String'],
+    'float64':['String', 'Integer'],
+    'int64':['String', 'Float'],
+    'datetime64[ns]':['Date']
+}
+
 # NOTE: - DATAFRAME CONSTANTS
 STOCK = 'Stock'
 DATE = 'Date'
 ADJ_CLOSE = 'Adj Close'
+VOLUME = 'Volume'
+EXCHANGE = 'Exchange'
 PAGE_SIZE = 15
 # NOTE: - DEFAULT OPTIONS CONSTANTS 
 DEFAULT_FEATURE = 'Adj Close'

@@ -8,6 +8,8 @@ from styles import layout_style, hide_div, button_style, upload_style
 # NOTE: - Dash-Layout component
 layout = html.Div(
     [
+        # SECTION: - Display Divs
+
         # File Upload Element
         dcc.Upload(
             id='upload',
@@ -38,6 +40,10 @@ layout = html.Div(
         # Div object for Graph Plot Components
         html.Div(id='graph-plot-container'),
 
+        # !SECTION
+
+        # SECTION: - Data Storing Divs
+
         # Hidden div that stores the intermediate value (in this case DataFrames)
         html.Div(id='dataframe-value', style=hide_div),
 
@@ -49,6 +55,9 @@ layout = html.Div(
 
         # Hidden div that stores a JSON representation of a lists of numerical datatype Columns according to User input
         html.Div(id='feature-values', style=hide_div)
+
+        # !SECTION
     ], 
+
     style=layout_style
 )
